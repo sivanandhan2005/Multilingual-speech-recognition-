@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MULTILINGUAL VOICE TRANSLATION | 5 Languages</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #000;
+      margin: 0;
+      padding: 40px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      transition: background 0.5s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 0;
+    }
+
+    body:hover::before {
+      background-image: url('https://thaka.bing.com/th/id/OIP.jvFa2TBJUTV59hnhl4mTzgHaEB?rs=1&pid=ImgDetMain');
+      opacity: 0.9;
+    }
+
+    .container {
+      background: rgba(26, 26, 26, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(255, 0, 0, 0.4);
+      width: 800px;
+      padding: 40px;
+      text-align: center;
+      border: 2px solid #ff0000;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      color: #ff0000;
+      margin-bottom: 30px;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 3rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+
+    .language-selector {
+      display: flex;
+      justify-content: space-between;
+      margin: 30px 0;
+    }
+
+    select {
+      padding: 14px;
+      border: 2px solid #ff0000;
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      width: 48%;
+      outline: none;
+      background: #333;
+      color: #fff;
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    select:focus {
+      border-color: #ff3333;
+      box-shadow: 0 0 12px rgba(255, 0, 0, 0.5);
+    }
+
+    button {
+      background: #ff0000;
+      color: white;
+      border: none;
+      padding: 16px 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-size: 20px;
+      margin: 20px 8px;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+
+    button:hover {
+      background: #cc0000;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(255, 0, 0, 0.5);
+    }
+
+    button:active {
+      transform: translateY(2px);
+    }
+
+    #stopBtn {
+      background: #333;
+      border: 2px solid #ff0000;
+    }
+
+    #stopBtn:hover {
+      background: #444;
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 24px;
+      border-radius: 10px;
+      background: #333;
+      min-height: 140px;
+      text-align: left;
+      border: 1px solid #ff0000;
+      font-size: 20px;
+    }
+
+    .status {
+      font-style: italic;
+      color: #aaa;
+      margin: 20px 0;
+      font-size: 18px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    hr {
+      border: 0;
+      height: 1px;
+      background: #ff0000;
+      margin: 20px 0;
+    }
+
+    #transcript, #translation {
+      font-size: 20px;
+      line-height: 1.8;
+    }
+
+    strong {
+      color: #ff0000;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MAATHI THARAN SOLLU</h1>
+
+    <div class="language-selector">
+      <select id="sourceLanguage">
+        <option value="en">English</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+        <option value="hi">Hindi</option>
+        <option value="ml">Malayalam</option>
+      </select>
+
+      <select id="targetLanguage">
+        <option value="en">English</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+        <option value="hi">Hindi</option>
+        <option value="ml">Malayalam</option>
+      </select>
+    </div>
+
+    <button id="startBtn">MIC</button>
+    <button id="stopBtn" class="hidden">PESUNATHU POODHUM NIRUTHU</button>
+
+    <p class="status" id="status">EDHA USE PANATHUKU NANDRI....</p>
+
+    <div class="result" id="result">
+      <p id="transcript"></p>
+      <hr>
+      <p id="translation"></p>
+    </div>
+  </div>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const statusElement = document.getElementById('status');
+    const transcriptElement = document.getElementById('transcript');
+    const translationElement = document.getElementById('translation');
+    const sourceLanguage = document.getElementById('sourceLanguage');
+    const targetLanguage = document.getElementById('targetLanguage');
+
+    let recognition;
+    let isListening = false;
+
+    if (!('webkitSpeechRecognition' in window)) {
+      statusElement.textContent = "Your browser doesn't support speech recognition. Try Chrome or Edge.";
+      startBtn.disabled = true;
+    } else {
+      recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        isListening = true;
+        startBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+        statusElement.textContent = "KETKURAN PESU!";
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Recognition error:", event.error);
+        statusElement.textContent = `Error: ${event.error}`;
+        stopListening();
+      };
+
+      recognition.onend = () => {
+        if (isListening) {
+          recognition.start();
+        }
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        transcriptElement.innerHTML = `<strong>Original (${sourceLanguage.value}):</strong> ${finalTranscript || interimTranscript}`;
+
+        if (finalTranscript) {
+          translateText(finalTranscript, sourceLanguage.value, targetLanguage.value);
+        }
+      };
+    }
+
+    startBtn.addEventListener('click', () => {
+      recognition.lang = getLanguageCode(sourceLanguage.value);
+      recognition.start();
+    });
+
+    stopBtn.addEventListener('click', stopListening);
+
+    function stopListening() {
+      recognition.stop();
+      isListening = false;
+      startBtn.classList.remove('hidden');
+      stopBtn.classList.add('hidden');
+      statusElement.textContent = "MIC HA PRESS PANI THIRUMBA PESU...";
+    }
+
+    function getLanguageCode(lang) {
+      const codes = {
+        'en': 'en-US',
+        'ta': 'ta-IN',
+        'te': 'te-IN',
+        'hi': 'hi-IN',
+        'ml': 'ml-IN'
+      };
+      return codes[lang] || 'en-US';
+    }
+
+    function translateText(text, sourceLang, targetLang) {
+      statusElement.textContent = "MAATHI KITTU ERUKAN...";
+
+      setTimeout(() => {
+        const mockTranslations = {
+          'en': { 'ta': 'இது ஒரு மொழிபெயர்ப்பு', 'te': 'ఇది ఒక అనువాదం', 'hi': 'यह एक अनुवाद है', 'ml': 'ഇതൊരു വിവർത്തനമാണ്', 'en': text },
+          'ta': { 'en': 'This is a translation', 'te': 'ఇది ఒక అనువాదం', 'hi': 'यह एक अनुवाद है', 'ml': 'ഇതൊരു വിവർത്തനമാണ്' },
+          'te': { 'en': 'This is a translation', 'ta': 'இது ஒரு மொழிபெயர்ப்பு', 'hi': 'यह एक अनुवाद है', 'ml': 'ഇതൊരു വിവർത്തനമാണ്' },
+          'hi': { 'en': 'This is a translation', 'ta': 'இது ஒரு மொழிபெயர்ப்பு', 'te': 'ఇది ఒక అనువాదం', 'ml': 'ഇതൊരു വിവർത്തനമാണ്' },
+          'ml': { 'en': 'This is a translation', 'ta': 'இது ஒரு மொழிபெயர்ப்பு', 'te': 'ఇది ఒక అనువాదం', 'hi': 'यह एक अनुवाद है' }
+        };
+
+        const translation = mockTranslations[sourceLang]?.[targetLang] || "Translation not available";
+        translationElement.innerHTML = `<strong>Translation (${targetLang}):</strong> ${translation}`;
+        statusElement.textContent = "MAATHITAN!";
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
